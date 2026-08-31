@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>LocalStore - Tienda en Línea</title>
+
+<style>
+
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+body{
+    font-family:Arial, Helvetica, sans-serif;
+    background:#f3f4f6;
+    color:#222;
+}
+
+/* HEADER */
+
+header{
+    background:#ffe600;
+    padding:12px 4%;
+    position:sticky;
+    top:0;
+    z-index:100;
+    box-shadow:0 2px 8px #0002;
+}
+
+.top{
+    display:flex;
+    align-items:center;
+    gap:20px;
+    max-width:1400px;
+    margin:auto;
+}
+
+.logo{
+    font-size:28px;
+    font-weight:bold;
+}
+
+.search{
+    display:flex;
+    flex:1;
+    max-width:750px;
+}
+
+.search input{
+    width:100%;
+    padding:13px 16px;
+    border:1px solid #ccc;
+    border-radius:6px 0 0 6px;
+    font-size:15px;
+}
+
+.search button{
+    border:0;
+    background:#3483fa;
+    color:white;
+    padding:0 20px;
+    border-radius:0 6px 6px 0;
+    cursor:pointer;
+    font-size:18px;
+}
+
+.cart-btn{
+    border:0;
+    background:transparent;
+    font-size:28px;
+    cursor:pointer;
+    position:relative;
+}
+
+.cart-count{
+    position:absolute;
+    right:-4px;
+    top:-5px;
+    background:#e53935;
+    color:white;
+    border-radius:50%;
+    font-size:12px;
+    padding:4px 7px;
+    font-weight:bold;
+}
+
+/* MENU */
+
+nav{
+    background:white;
+    padding:10px 4%;
+    border-bottom:1px solid #ddd;
+}
+
+.nav-inner{
+    max-width:1400px;
+    margin:auto;
+    display:flex;
+    gap:20px;
+    align-items:center;
+    flex-wrap:wrap;
+}
+
+nav button{
+    border:0;
+    background:none;
+    cursor:pointer;
+    color:#555;
+    font-size:14px;
+}
+
+nav button:hover{
+    color:#3483fa;
+}
+
+/* HERO */
+
+.hero{
+    max-width:1400px;
+    margin:20px auto;
+    padding:40px;
+    border-radius:12px;
+    background:linear-gradient(120deg,#3483fa,#7b61ff);
+    color:white;
+}
+
+.hero h1{
+    font-size:38px;
+    margin-bottom:10px;
+}
+
+.hero p{
+    font-size:18px;
+    margin-bottom:18px;
+}
+
+.hero button{
+    background:#ffe600;
+    border:0;
+    padding:12px 22px;
+    border-radius:7px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+/* PRODUCTOS */
+
+.container{
+    max-width:1400px;
+    margin:auto;
+    padding:0 15px 40px;
+}
+
+.section-title{
+    font-size:25px;
+    margin:25px 0 15px;
+}
+
+.products{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+    gap:16px;
+}
+
+.card{
+    background:white;
+    border-radius:10px;
+    overflow:hidden;
+    box-shadow:0 1px 5px #0001;
+    transition:.2s;
+}
+
+.card:hover{
+    transform:translateY(-3px);
+    box-shadow:0 5px 18px #0002;
+}
+
+.product-img{
+    height:190px;
+    background:#f7f7f7;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:90px;
+}
+
+.card-body{
+    padding:15px;
+}
+
+.badge{
+    font-size:12px;
+    color:#00a650;
+    font-weight:bold;
+    margin-bottom:7px;
+}
+
+.card h3{
+    font-size:16px;
+    font-weight:normal;
+    min-height:42px;
+    margin-bottom:8px;
+}
+
+.price{
+    font-size:25px;
+    margin-bottom:4px;
+}
+
+.old-price{
+    text-decoration:line-through;
+    color:#888;
+    font-size:13px;
+}
+
+.installments{
+    color:#00a650;
+    font-size:13px;
+    margin:6px 0 12px;
+}
+
+.add{
+    width:100%;
+    padding:11px;
+    border:0;
+    border-radius:6px;
+    background:#3483fa;
+    color:white;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.add:hover{
+    background:#2968c8;
+}
+
+/* CARRITO */
+
+.overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:#0008;
+    z-index:200;
+}
+
+.overlay.show{
+    display:block;
+}
+
+.cart-panel{
+    position:absolute;
+    right:0;
+    top:0;
+    height:100%;
+    width:min(430px,100%);
+    background:white;
+    padding:22px;
+    overflow:auto;
+}
+
+.cart-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    border-bottom:1px solid #ddd;
+    padding-bottom:15px;
+}
+
+.close{
+    border:0;
+    background:none;
+    font-size:28px;
+    cursor:pointer;
+}
+
+.cart-item{
+    display:flex;
+    gap:10px;
+    padding:15px 0;
+    border-bottom:1px solid #eee;
+}
+
+.cart-item .emoji{
+    font-size:42px;
+    width:55px;
+    text-align:center;
+}
+
+.item-info{
+    flex:1;
+}
+
+.item-info h4{
+    font-size:14px;
+    margin-bottom:5px;
+}
+
+.qty{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-top:8px;
+}
+
+.qty button{
+    width:28px;
+    height:28px;
+    border:1px solid #ccc;
+    background:white;
+    border-radius:4px;
+    cursor:pointer;
+}
+
+.remove{
+    border:0 !important;
+    background:none !important;
+    color:#e53935;
+    cursor:pointer;
+    font-size:12px;
+}
+
+.total{
+    font-size:22px;
+    font-weight:bold;
+    text-align:right;
+    margin:20px 0;
+}
+
+.checkout{
+    width:100%;
+    padding:14px;
+    background:#00a650;
+    color:white;
+    border:0;
+    border-radius:7px;
+    font-weight:bold;
+    cursor:pointer;
+    font-size:16px;
+}
+
+/* MODAL */
+
+.modal{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:#0008;
+    z-index:300;
+    align-items:center;
+    justify-content:center;
+}
+
+.modal.show{
+    display:flex;
+}
+
+.modal-box{
+    background:white;
+    width:min(500px,92%);
+    padding:25px;
+    border-radius:12px;
+}
+
+.modal-box h2{
+    margin-bottom:15px;
+}
+
+.modal-box input,
+.modal-box select{
+    width:100%;
+    padding:11px;
+    margin:7px 0;
+    border:1px solid #ccc;
+    border-radius:6px;
+}
+
+.confirm{
+    margin-top:12px;
+    width:100%;
+    padding:12px;
+    background:#3483fa;
+    color:white;
+    border:0;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+/* FOOTER */
+
+footer{
+    background:#222;
+    color:#ddd;
+    text-align:center;
+    padding:35px;
+    margin-top:30px;
+}
+
+/* CELULAR */
+
+@media(max-width:700px){
+
+    .top{
+        gap:8px;
+        flex-wrap:wrap;
+    }
+
+    .logo{
+        font-size:23px;
+    }
+
+    .search{
+        order:3;
+        flex-basis:100%;
+    }
+
+    .hero{
+        margin:10px;
+        padding:25px;
+    }
+
+    .hero h1{
+        font-size:28px;
+    }
+
+}
+
+</style>
+</head>
+
+
+<body>
+
+
+<!-- HEADER -->
+
+<header>
+
+<div class="top">
+
+<div class="logo">
+LocalStore
+</div>
+
+<div class="search">
+
+<input
+id="search"
+type="text"
+placeholder="Buscar productos, marcas y más..."
+>
+
+<button onclick="renderProducts()">
+🔍
+</button>
+
+</div>
+
+<button class="cart-btn" onclick="openCart()">
+
+🛒
+
+<span
+class="cart-count"
+id="cartCount">
+0
+</span>
+
+</button>
+
+</div>
+
+</header>
+
+
+<!-- MENU -->
+
+<nav>
+
+<div class="nav-inner">
+
+<b>📍 Enviar a tu ubicación</b>
+
+<button onclick="filterCategory('Todos')">
+Todos
+</button>
+
+<button onclick="filterCategory('Tecnología')">
+Tecnología
+</button>
+
+<button onclick="filterCategory('Computación')">
+Computación
+</button>
+
+<button onclick="filterCategory('Celulares')">
+Celulares
+</button>
+
+<button onclick="filterCategory('Audio')">
+Audio
+</button>
+
+<button onclick="filterCategory('Accesorios')">
+Accesorios
+</button>
+
+</div>
+
+</nav>
+
+
+<!-- BANNER -->
+
+<section class="hero">
+
+<h1>
+Todo lo que necesitas, en un solo lugar
+</h1>
+
+<p>
+Compra productos de tecnología y accesorios
+con una experiencia rápida y sencilla.
+</p>
+
+<button onclick="document.querySelector('.section-title').scrollIntoView({behavior:'smooth'})">
+
+Ver productos
+
+</button>
+
+</section>
+
+
+<!-- PRODUCTOS -->
+
+<main class="container">
+
+<h2 class="section-title">
+🔥 Productos destacados
+</h2>
+
+<div
+id="products"
+class="products">
+</div>
+
+</main>
+
+
+<!-- FOOTER -->
+
+<footer>
+
+<h3>
+LocalStore
+</h3>
+
+<p>
+Tu tienda en línea • Compra fácil, rápida y segura
+</p>
+
+</footer>
+
+
+<!-- CARRITO -->
+
+<div
+id="cartOverlay"
+class="overlay"
+onclick="closeCartOutside(event)"
+>
+
+<aside class="cart-panel">
+
+<div class="cart-header">
+
+<h2>
+🛒 Mi carrito
+</h2>
+
+<button
+class="close"
+onclick="closeCart()">
+×
+</button>
+
+</div>
+
+<div id="cartItems">
+</div>
+
+<div id="cartFooter">
+</div>
+
+</aside>
+
+</div>
+
+
+<!-- CHECKOUT -->
+
+<div
+id="checkoutModal"
+class="modal"
+>
+
+<div class="modal-box">
+
+<h2>
+Finalizar compra
+</h2>
+
+<p>
+Completa tus datos para realizar el pedido.
+</p>
+
+<input
+id="name"
+placeholder="Nombre completo"
+>
+
+<input
+id="address"
+placeholder="Dirección de entrega"
+>
+
+<input
+id="email"
+type="email"
+placeholder="Correo electrónico"
+>
+
+<select id="payment">
+
+<option>
+Tarjeta de crédito/débito
+</option>
+
+<option>
+Transferencia bancaria
+</option>
+
+<option>
+Pago contra entrega
+</option>
+
+</select>
+
+<button
+class="confirm"
+onclick="finishOrder()">
+
+Confirmar pedido
+
+</button>
+
+<button
+class="close"
+style="width:100%;margin-top:8px"
+onclick="closeCheckout()">
+
+Cancelar
+
+</button>
+
+</div>
+
+</div>
+
+
+<script>
+
+
+
+const products=[
+
+{
+id:1,
+name:"Laptop Lenovo IdeaPad",
+category:"Computación",
+price:12999,
+old:14999,
+emoji:"💻"
+},
+
+{
+id:2,
+name:"iPhone 15 128 GB",
+category:"Celulares",
+price:14999,
+old:16999,
+emoji:"📱"
+},
+
+{
+id:3,
+name:"Audífonos Bluetooth Pro",
+category:"Audio",
+price:899,
+old:1199,
+emoji:"🎧"
+},
+
+{
+id:4,
+name:"Teclado Mecánico RGB",
+category:"Accesorios",
+price:1299,
+old:1599,
+emoji:"⌨️"
+},
+
+{
+id:5,
+name:"Mouse Gamer RGB",
+category:"Accesorios",
+price:699,
+old:899,
+emoji:"🖱️"
+},
+
+{
+id:6,
+name:"Monitor 24 pulgadas Full HD",
+category:"Computación",
+price:2899,
+old:3299,
+emoji:"🖥️"
+},
+
+{
+id:7,
+name:"Smartwatch Serie X",
+category:"Tecnología",
+price:1799,
+old:2199,
+emoji:"⌚"
+},
+
+{
+id:8,
+name:"Tablet 10 pulgadas",
+category:"Tecnología",
+price:3299,
+old:3999,
+emoji:"📲"
+},
+
+{
+id:9,
+name:"Bocina Bluetooth",
+category:"Audio",
+price:1099,
+old:1399,
+emoji:"🔊"
+},
+
+{
+id:10,
+name:"Cámara Web Full HD",
+category:"Computación",
+price:799,
+old:999,
+emoji:"📷"
+}
+
+];
+
+
+let category="Todos";
+
+let cart=JSON.parse(
+localStorage.getItem("localstore_cart") || "[]"
+);
+
+
+
+
+function money(n){
+
+return n.toLocaleString(
+"es-MX",
+{
+style:"currency",
+currency:"MXN"
+}
+);
+
+}
+
+
+
+
+function renderProducts(){
+
+const text=
+document
+.getElementById("search")
+.value
+.toLowerCase()
+.trim();
+
+
+const list=products.filter(p=>
+
+(category==="Todos" || p.category===category)
+
+&&
+
+(
+p.name.toLowerCase().includes(text)
+||
+p.category.toLowerCase().includes(text)
+)
+
+);
+
+
+const box=
+document.getElementById("products");
+
+
+box.innerHTML=
+
+list.length
+
+?
+
+list.map(p=>`
+
+<article class="card">
+
+<div class="product-img">
+
+${p.emoji}
+
+</div>
+
+<div class="card-body">
+
+<div class="badge">
+
+✓ Envío gratis
+
+</div>
+
+<h3>
+
+${p.name}
+
+</h3>
+
+<div class="old-price">
+
+${money(p.old)}
+
+</div>
+
+<div class="price">
+
+${money(p.price)}
+
+</div>
+
+<div class="installments">
+
+Hasta 12 meses sin intereses
+
+</div>
+
+<button
+class="add"
+onclick="addToCart(${p.id})">
+
+Agregar al carrito
+
+</button>
+
+</div>
+
+</article>
+
+`).join("")
+
+:
+
+"<div class='empty'>No encontramos productos con esa búsqueda.</div>";
+
+}
+
+
+
+
+function filterCategory(c){
+
+category=c;
+
+renderProducts();
+
+}
+
+
+
+
+function addToCart(id){
+
+const item=
+cart.find(x=>x.id===id);
+
+
+if(item){
+
+item.qty++;
+
+}
+
+else{
+
+cart.push({
+id:id,
+qty:1
+});
+
+}
+
+
+saveCart();
+
+openCart();
+
+}
+
+
+// CAMBIAR CANTIDAD
+
+function changeQty(id,delta){
+
+const item=
+cart.find(x=>x.id===id);
+
+
+if(!item)
+return;
+
+
+item.qty+=delta;
+
+
+if(item.qty<=0){
+
+cart=
+cart.filter(x=>x.id!==id);
+
+}
+
+
+saveCart();
+
+renderCart();
+
+}
+
+
+// ELIMINAR
+
+function removeItem(id){
+
+cart=
+cart.filter(x=>x.id!==id);
+
+saveCart();
+
+renderCart();
+
+}
+
+
+// GUARDAR
+
+function saveCart(){
+
+localStorage.setItem(
+"localstore_cart",
+JSON.stringify(cart)
+);
+
+updateCount();
+
+}
+
+
+// CONTADOR
+
+function updateCount(){
+
+document
+.getElementById("cartCount")
+.textContent=
+
+cart.reduce(
+(s,x)=>s+x.qty,
+0
+);
+
+}
+
+
+// MOSTRAR CARRITO
+
+function renderCart(){
+
+const box=
+document.getElementById("cartItems");
+
+const footer=
+document.getElementById("cartFooter");
+
+
+if(!cart.length){
+
+box.innerHTML=
+"<div class='empty' style='margin-top:20px'>Tu carrito está vacío 🛒</div>";
+
+footer.innerHTML="";
+
+return;
+
+}
+
+
+box.innerHTML=
+
+cart.map(item=>{
+
+const p=
+products.find(
+x=>x.id===item.id
+);
+
+
+return `
+
+<div class="cart-item">
+
+<div class="emoji">
+
+${p.emoji}
+
+</div>
+
+<div class="item-info">
+
+<h4>
+${p.name}
+</h4>
+
+<b>
+${money(p.price)}
+</b>
+
+<div class="qty">
+
+<button
+onclick="changeQty(${p.id},-1)">
+−
+</button>
+
+<span>
+${item.qty}
+</span>
+
+<button
+onclick="changeQty(${p.id},1)">
++
+</button>
+
+<button
+class="remove"
+onclick="removeItem(${p.id})">
+
+Eliminar
+
+</button>
+
+</div>
+
+</div>
+
+</div>
+
+`;
+
+}).join("");
+
+
+const total=
+
+cart.reduce(
+(s,item)=>{
+
+const p=
+products.find(
+x=>x.id===item.id
+);
+
+return s+p.price*item.qty;
+
+},
+0
+);
+
+
+footer.innerHTML=`
+
+<div class="total">
+
+Total:
+${money(total)}
+
+</div>
+
+<button
+class="checkout"
+onclick="openCheckout()">
+
+Continuar compra
+
+</button>
+
+`;
+
+}
+
+
+// ABRIR CARRITO
+
+function openCart(){
+
+renderCart();
+
+document
+.getElementById("cartOverlay")
+.classList.add("show");
+
+}
+
+
+// CERRAR CARRITO
+
+function closeCart(){
+
+document
+.getElementById("cartOverlay")
+.classList.remove("show");
+
+}
+
+
+function closeCartOutside(e){
+
+if(e.target.id==="cartOverlay"){
+
+closeCart();
+
+}
+
+}
+
+
+// CHECKOUT
+
+function openCheckout(){
+
+if(!cart.length)
+return;
+
+document
+.getElementById("checkoutModal")
+.classList.add("show");
+
+}
+
+
+function closeCheckout(){
+
+document
+.getElementById("checkoutModal")
+.classList.remove("show");
+
+}
+
+
+// FINALIZAR
+
+function finishOrder(){
+
+const name=
+document.getElementById("name")
+.value.trim();
+
+const address=
+document.getElementById("address")
+.value.trim();
+
+const email=
+document.getElementById("email")
+.value.trim();
+
+
+if(!name || !address || !email){
+
+alert(
+"Por favor completa todos los datos."
+);
+
+return;
+
+}
+
+
+alert(
+"¡Pedido realizado correctamente, "
++
+name
++
+"! Gracias por comprar en LocalStore."
+);
+
+
+cart=[];
+
+saveCart();
+
+closeCheckout();
+
+closeCart();
+
+
+document.getElementById("name").value="";
+
+document.getElementById("address").value="";
+
+document.getElementById("email").value="";
+
+}
+
+
+// BUSCADOR
+
+document
+.getElementById("search")
+.addEventListener(
+"keyup",
+renderProducts
+);
+
+
+// INICIAR
+
+renderProducts();
+
+updateCount();
+
+</script>
+
+</body>
+</html>
