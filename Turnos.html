@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Turnos · Sala de espera</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #F3F5FA;
+    --surface: #FFFFFF;
+    --ink: #0F172A;
+    --ink-soft: #6B7686;
+    --line: #E7EAF2;
+    --indigo: #4F46E5;
+    --indigo-dark: #3D33C9;
+    --violet: #8B5CF6;
+    --alta: #E24A3E;
+    --alta-bg: #FDEBE9;
+    --media: #E08E1D;
+    --media-bg: #FDF1DD;
+    --baja: #12A167;
+    --baja-bg: #E2F6EC;
+    --shadow: 0 12px 32px rgba(15, 23, 42, 0.07);
+    --shadow-sm: 0 4px 14px rgba(15, 23, 42, 0.05);
+  }
+
+  * { box-sizing: border-box; }
+
+  body{
+    margin:0;
+    background:
+      radial-gradient(1100px 500px at 100% -10%, rgba(79,70,229,0.08), transparent),
+      radial-gradient(900px 400px at -10% 10%, rgba(139,92,246,0.06), transparent),
+      var(--bg);
+    color:var(--ink);
+    font-family:'Plus Jakarta Sans', sans-serif;
+    min-height:100vh;
+  }
+
+  header{
+    position:sticky;
+    top:0;
+    z-index:10;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:20px clamp(20px,4vw,56px);
+    background:rgba(243,245,250,0.75);
+    backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--line);
+  }
+
+  .brand{ display:flex; align-items:center; gap:12px; }
+  .brand-mark{
+    width:38px; height:38px; border-radius:11px;
+    background:linear-gradient(135deg, var(--indigo), var(--violet));
+    display:flex; align-items:center; justify-content:center;
+    color:#fff; font-weight:800; font-size:16px;
+    box-shadow:0 6px 16px rgba(79,70,229,0.35);
+  }
+  header h1{
+    font-size:19px;
+    font-weight:800;
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+  header .sub{
+    color:var(--ink-soft);
+    font-size:12.5px;
+    margin-top:1px;
+  }
+
+  .live{
+    display:flex; align-items:center; gap:8px;
+    font-size:13px; color:var(--ink-soft); font-weight:600;
+  }
+  .live .dot{
+    width:8px; height:8px; border-radius:50%;
+    background:var(--baja);
+    box-shadow:0 0 0 0 rgba(18,161,103,0.5);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse{
+    0%{ box-shadow:0 0 0 0 rgba(18,161,103,0.45); }
+    70%{ box-shadow:0 0 0 8px rgba(18,161,103,0); }
+    100%{ box-shadow:0 0 0 0 rgba(18,161,103,0); }
+  }
+  .clock{
+    font-variant-numeric: tabular-nums;
+    font-weight:700;
+    color:var(--ink);
+  }
+
+  .stats{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:14px;
+    padding:24px clamp(20px,4vw,56px) 0;
+  }
+  @media (max-width: 780px){ .stats{ grid-template-columns:repeat(2,1fr); } }
+
+  .stat-card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:16px 18px;
+    box-shadow:var(--shadow-sm);
+  }
+  .stat-card .label{ font-size:12.5px; color:var(--ink-soft); font-weight:600; }
+  .stat-card .value{ font-size:28px; font-weight:800; margin-top:4px; letter-spacing:-0.02em; }
+  .stat-card.total .value{ background:linear-gradient(135deg, var(--indigo), var(--violet)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .stat-card.alta .value{ color:var(--alta); }
+  .stat-card.media .value{ color:var(--media); }
+  .stat-card.baja .value{ color:var(--baja); }
+
+  main{
+    display:grid;
+    grid-template-columns: 340px 1fr;
+    gap:20px;
+    padding:20px clamp(20px,4vw,56px) 56px;
+    align-items:start;
+  }
+  @media (max-width: 780px){ main{ grid-template-columns: 1fr; } }
+
+  .panel{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:20px;
+    padding:24px;
+    box-shadow:var(--shadow);
+  }
+
+  .panel h2{
+    font-size:16px;
+    margin:0 0 18px;
+    font-weight:800;
+  }
+
+  label{
+    display:block;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink-soft);
+    margin-bottom:7px;
+  }
+
+  input[type="text"]{
+    width:100%;
+    padding:12px 14px;
+    border:1.5px solid var(--line);
+    border-radius:12px;
+    font-size:15px;
+    font-family:inherit;
+    color:var(--ink);
+    margin-bottom:18px;
+    background:#FAFBFE;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  input[type="text"]:focus{
+    outline:none;
+    border-color:var(--indigo);
+    box-shadow:0 0 0 4px rgba(79,70,229,0.12);
+  }
+
+  .priority-choice{
+    display:flex;
+    gap:8px;
+    margin-bottom:22px;
+  }
+  .priority-choice input{ position:absolute; opacity:0; width:0; height:0; }
+  .priority-choice label{
+    flex:1;
+    margin:0;
+    text-align:center;
+    padding:10px 4px;
+    border-radius:11px;
+    border:1.5px solid var(--line);
+    cursor:pointer;
+    font-size:13px;
+    font-weight:700;
+    color:var(--ink-soft);
+    transition: background .15s, color .15s, border-color .15s, transform .1s;
+  }
+  .priority-choice label:hover{ transform:translateY(-1px); }
+  .priority-choice input:checked + label.alta{ background:var(--alta-bg); border-color:var(--alta); color:var(--alta); }
+  .priority-choice input:checked + label.media{ background:var(--media-bg); border-color:var(--media); color:var(--media); }
+  .priority-choice input:checked + label.baja{ background:var(--baja-bg); border-color:var(--baja); color:var(--baja); }
+
+  button{ font-family:inherit; cursor:pointer; border:none; }
+
+  .btn-primary{
+    width:100%;
+    background:linear-gradient(135deg, var(--indigo), var(--violet));
+    color:#fff;
+    padding:13px;
+    border-radius:12px;
+    font-size:15px;
+    font-weight:700;
+    box-shadow:0 10px 20px rgba(79,70,229,0.28);
+    transition: transform .12s, box-shadow .12s;
+  }
+  .btn-primary:hover{ transform:translateY(-1px); box-shadow:0 14px 24px rgba(79,70,229,0.34); }
+  .btn-primary:active{ transform:translateY(0); }
+
+  .auto-block{
+    margin-top:26px;
+    padding-top:22px;
+    border-top:1px solid var(--line);
+    display:flex;
+    align-items:center;
+    gap:16px;
+  }
+
+  .ring-wrap{ position:relative; width:64px; height:64px; flex-shrink:0; }
+  .ring-wrap svg{ transform:rotate(-90deg); }
+  .ring-track{ fill:none; stroke:var(--line); stroke-width:6; }
+  .ring-fill{ fill:none; stroke:url(#ringGradient); stroke-width:6; stroke-linecap:round; transition:stroke-dashoffset 1s linear; }
+  .ring-wrap .ring-num{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:13px; font-weight:800; font-variant-numeric:tabular-nums;
+  }
+
+  .auto-text{ font-size:12.5px; color:var(--ink-soft); line-height:1.5; }
+  .auto-text b{ color:var(--ink); }
+
+  .queue-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom:16px;
+    padding:0 2px;
+  }
+  .queue-head h2{ margin:0; font-size:17px; font-weight:800; }
+  .queue-count{ font-size:13px; color:var(--ink-soft); font-weight:600; }
+
+  .queue-list{
+    list-style:none;
+    margin:0;
+    padding:0;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+
+  .ticket{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:14px 16px;
+    box-shadow:var(--shadow-sm);
+    animation: appear .35s ease;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .ticket:hover{ transform:translateY(-2px); box-shadow:var(--shadow); }
+
+  @keyframes appear{
+    from{ opacity:0; transform:translateY(-8px) scale(.98); }
+    to{ opacity:1; transform:translateY(0) scale(1); }
+  }
+
+  .avatar{
+    width:46px; height:46px; border-radius:13px;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:14px; color:#fff;
+    flex-shrink:0;
+  }
+  .avatar.alta{ background:linear-gradient(135deg, var(--alta), #F0796F); }
+  .avatar.media{ background:linear-gradient(135deg, var(--media), #F3B255); }
+  .avatar.baja{ background:linear-gradient(135deg, var(--baja), #46C98A); }
+
+  .ticket .info{ flex:1; min-width:0; }
+  .ticket .name{ font-size:15px; font-weight:700; }
+  .ticket .meta{ font-size:12px; color:var(--ink-soft); margin-top:2px; }
+  .ticket .meta .turno{ font-weight:700; color:var(--ink); }
+
+  .badge{
+    font-size:11px;
+    font-weight:800;
+    padding:5px 11px;
+    border-radius:20px;
+    white-space:nowrap;
+    letter-spacing:0.02em;
+  }
+  .badge.alta{ background:var(--alta-bg); color:var(--alta); }
+  .badge.media{ background:var(--media-bg); color:var(--media); }
+  .badge.baja{ background:var(--baja-bg); color:var(--baja); }
+
+  .btn-attend{
+    background:var(--bg);
+    border:1px solid var(--line);
+    color:var(--ink);
+    font-size:13px;
+    font-weight:700;
+    padding:9px 15px;
+    border-radius:10px;
+    transition: background .15s, color .15s, border-color .15s;
+  }
+  .btn-attend:hover{
+    background:linear-gradient(135deg, var(--indigo), var(--violet));
+    border-color:transparent;
+    color:#fff;
+  }
+
+  .empty{
+    text-align:center;
+    padding:60px 20px;
+    color:var(--ink-soft);
+    border:1.5px dashed var(--line);
+    border-radius:16px;
+    font-size:14px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-mark">+</div>
+    <div>
+      <h1>Turnos</h1>
+      <div class="sub">Sala de espera · asignación por prioridad</div>
+    </div>
+  </div>
+  <div class="live">
+    <span class="dot"></span>
+    <span class="clock" id="clockTime">00:00:00</span>
+  </div>
+</header>
+
+<div class="stats">
+  <div class="stat-card total">
+    <div class="label">Total en fila</div>
+    <div class="value" id="statTotal">0</div>
+  </div>
+  <div class="stat-card alta">
+    <div class="label">Prioridad alta</div>
+    <div class="value" id="statAlta">0</div>
+  </div>
+  <div class="stat-card media">
+    <div class="label">Prioridad media</div>
+    <div class="value" id="statMedia">0</div>
+  </div>
+  <div class="stat-card baja">
+    <div class="label">Prioridad baja</div>
+    <div class="value" id="statBaja">0</div>
+  </div>
+</div>
+
+<main>
+  <section class="panel">
+    <h2>Agregar paciente</h2>
+    <form id="clientForm">
+      <label for="clientName">Nombre del paciente</label>
+      <input type="text" id="clientName" placeholder="Ej. María López" autocomplete="off">
+
+      <label>Prioridad de la solicitud</label>
+      <div class="priority-choice">
+        <input type="radio" name="priority" id="p-alta" value="alta">
+        <label for="p-alta" class="alta">Alta</label>
+
+        <input type="radio" name="priority" id="p-media" value="media" checked>
+        <label for="p-media" class="media">Media</label>
+
+        <input type="radio" name="priority" id="p-baja" value="baja">
+        <label for="p-baja" class="baja">Baja</label>
+      </div>
+
+      <button type="submit" class="btn-primary">Agregar cliente</button>
+    </form>
+
+    <div class="auto-block">
+      <div class="ring-wrap">
+        <svg width="64" height="64" viewBox="0 0 64 64">
+          <defs>
+            <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#4F46E5"/>
+              <stop offset="100%" stop-color="#8B5CF6"/>
+            </linearGradient>
+          </defs>
+          <circle class="ring-track" cx="32" cy="32" r="27"></circle>
+          <circle class="ring-fill" id="ringFill" cx="32" cy="32" r="27"></circle>
+        </svg>
+        <div class="ring-num" id="countdown">60</div>
+      </div>
+      <div class="auto-text">Cada <b>minuto</b> se agrega un paciente nuevo a la fila de forma automática, con turno y prioridad al azar.</div>
+    </div>
+  </section>
+
+  <section>
+    <div class="queue-head">
+      <h2>Fila de espera</h2>
+      <span class="queue-count" id="queueCount">0 pacientes</span>
+    </div>
+    <ul class="queue-list" id="queueList"></ul>
+    <div class="empty" id="emptyState">Aún no hay pacientes en la fila.</div>
+  </section>
+</main>
+
+<script>
+  // ---------- Estado ----------
+  let queue = [];
+  const usedNumbers = new Set();
+
+  const priorityWeight = { alta: 0, media: 1, baja: 2 };
+  const priorityLabel = { alta: 'ALTA', media: 'MEDIA', baja: 'BAJA' };
+  const priorityLetter = { alta: 'A', media: 'M', baja: 'B' };
+  const priorityInitialFallback = { alta: 'A', media: 'M', baja: 'B' };
+
+  const autoNames = [
+    'Juan Pérez', 'Ana Ruiz', 'Carlos Gómez', 'Lucía Fernández', 'Miguel Torres',
+    'Sofía Ramírez', 'Diego Morales', 'Valentina Castro', 'Andrés Herrera', 'Camila Ortiz',
+    'Roberto Silva', 'Paola Vargas', 'Fernando Rojas', 'Daniela Medina', 'Javier Cruz'
+  ];
+
+  // ---------- Turno aleatorio (Math) ----------
+  function generarTurno(priority) {
+    let numero;
+    do {
+      // Math.random() y Math.floor() generan el número de turno
+      numero = Math.floor(Math.random() * 900) + 100; // rango 100-999
+    } while (usedNumbers.has(numero));
+    usedNumbers.add(numero);
+    return priorityLetter[priority] + numero;
+  }
+
+  function prioridadAleatoria() {
+    const r = Math.random();
+    if (r < 0.15) return 'alta';
+    if (r < 0.55) return 'media';
+    return 'baja';
+  }
+
+  function nombreAleatorio() {
+    const i = Math.floor(Math.random() * autoNames.length);
+    return autoNames[i];
+  }
+
+  function iniciales(nombre) {
+    return nombre.split(' ').filter(Boolean).slice(0, 2).map(p => p[0].toUpperCase()).join('');
+  }
+
+  // ---------- Cola ----------
+  function agregarPaciente(nombre, priority) {
+    const paciente = {
+      id: Date.now() + Math.random(),
+      turno: generarTurno(priority),
+      nombre: nombre,
+      priority: priority,
+      hora: new Date()
+    };
+    queue.push(paciente);
+    ordenarCola();
+    render();
+  }
+
+  function ordenarCola() {
+    queue.sort((a, b) => {
+      const diff = priorityWeight[a.priority] - priorityWeight[b.priority];
+      if (diff !== 0) return diff;
+      return a.hora - b.hora;
+    });
+  }
+
+  function atender(id) {
+    queue = queue.filter(p => p.id !== id);
+    render();
+  }
+
+  function render() {
+    const list = document.getElementById('queueList');
+    const empty = document.getElementById('emptyState');
+    const count = document.getElementById('queueCount');
+
+    count.textContent = queue.length + (queue.length === 1 ? ' paciente' : ' pacientes');
+    document.getElementById('statTotal').textContent = queue.length;
+    document.getElementById('statAlta').textContent = queue.filter(p => p.priority === 'alta').length;
+    document.getElementById('statMedia').textContent = queue.filter(p => p.priority === 'media').length;
+    document.getElementById('statBaja').textContent = queue.filter(p => p.priority === 'baja').length;
+
+    if (queue.length === 0) {
+      list.innerHTML = '';
+      empty.style.display = 'block';
+      return;
+    }
+    empty.style.display = 'none';
+
+    list.innerHTML = queue.map(p => `
+      <li class="ticket ${p.priority}">
+        <div class="avatar ${p.priority}">${iniciales(p.nombre)}</div>
+        <div class="info">
+          <div class="name">${escapeHtml(p.nombre)}</div>
+          <div class="meta"><span class="turno">${p.turno}</span> · Ingresó a las ${p.hora.toLocaleTimeString('es-ES', { hour:'2-digit', minute:'2-digit' })}</div>
+        </div>
+        <span class="badge ${p.priority}">${priorityLabel[p.priority]}</span>
+        <button class="btn-attend" onclick="atender(${p.id})">Atender</button>
+      </li>
+    `).join('');
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // ---------- Formulario manual ----------
+  document.getElementById('clientForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const nameInput = document.getElementById('clientName');
+    const nombre = nameInput.value.trim();
+    if (!nombre) {
+      nameInput.focus();
+      return;
+    }
+    const priority = document.querySelector('input[name="priority"]:checked').value;
+    agregarPaciente(nombre, priority);
+    nameInput.value = '';
+    nameInput.focus();
+  });
+
+  // ---------- Temporizador automático (anillo de progreso) ----------
+  const CICLO_SEGUNDOS = 60;
+  let segundosRestantes = CICLO_SEGUNDOS;
+  const RADIO = 27;
+  const CIRCUNFERENCIA = 2 * Math.PI * RADIO;
+  const ringFill = document.getElementById('ringFill');
+  ringFill.style.strokeDasharray = CIRCUNFERENCIA;
+
+  function tickAuto() {
+    segundosRestantes--;
+    if (segundosRestantes <= 0) {
+      agregarPaciente(nombreAleatorio(), prioridadAleatoria());
+      segundosRestantes = CICLO_SEGUNDOS;
+    }
+    actualizarAnillo();
+  }
+
+  function actualizarAnillo() {
+    document.getElementById('countdown').textContent = segundosRestantes;
+    const progreso = (CICLO_SEGUNDOS - segundosRestantes) / CICLO_SEGUNDOS;
+    const offset = CIRCUNFERENCIA * (1 - progreso);
+    ringFill.style.strokeDashoffset = offset;
+  }
+
+  setInterval(tickAuto, 1000);
+  actualizarAnillo();
+
+  // ---------- Reloj ----------
+  function actualizarReloj() {
+    const ahora = new Date();
+    document.getElementById('clockTime').textContent = ahora.toLocaleTimeString('es-ES');
+  }
+  actualizarReloj();
+  setInterval(actualizarReloj, 1000);
+
+  // ---------- Carga inicial ----------
+  agregarPaciente('Juan Pérez', 'alta');
+  agregarPaciente('Ana Ruiz', 'media');
+  agregarPaciente('Carlos Gómez', 'baja');
+</script>
+
+</body>
+</html>
