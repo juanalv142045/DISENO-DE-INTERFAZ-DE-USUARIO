@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registro de cliente · Agenda de citas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --teal-900:#0F3A3D;
+    --teal-700:#175C60;
+    --teal-500:#1F7A80;
+    --sand-100:#F6F3EC;
+    --sand-50:#FBFAF6;
+    --clay-600:#B5533C;
+    --clay-700:#9A4531;
+    --ink-900:#1B2422;
+    --ink-500:#5B6663;
+    --line:#DAD4C6;
+    --ok:#2E7D5B;
+    --err:#B3261E;
+    --radius:10px;
+    --focus: 0 0 0 3px rgba(31,122,128,0.35);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--sand-100);
+    color:var(--ink-900);
+    font-family:'Public Sans', sans-serif;
+    line-height:1.5;
+    min-height:100vh;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding:32px 16px 64px;
+  }
+  .shell{
+    width:100%;
+    max-width:960px;
+    background:var(--sand-50);
+    border:1px solid var(--line);
+    border-radius:16px;
+    overflow:hidden;
+    display:grid;
+    grid-template-columns:1fr;
+  }
+  @media(min-width:840px){
+    .shell{grid-template-columns:320px 1fr;}
+  }
+
+  /* ---- Panel de contexto (heurística 1 y 6: estado visible + reconocer, no recordar) ---- */
+  .context{
+    background:var(--teal-900);
+    color:var(--sand-50);
+    padding:36px 32px;
+    position:relative;
+  }
+  .context h1{
+    font-family:'Fraunces', serif;
+    font-weight:500;
+    font-size:1.7rem;
+    line-height:1.25;
+    margin:0 0 10px;
+  }
+  .context p.lead{
+    color:#CFE3E0;
+    font-size:0.95rem;
+    margin:0 0 28px;
+  }
+  .steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:0;}
+  .steps li{
+    display:flex;gap:12px;align-items:flex-start;
+    padding:12px 0;
+    border-left:2px solid rgba(255,255,255,0.15);
+    padding-left:16px;
+    margin-left:11px;
+    position:relative;
+  }
+  .steps li:last-child{border-left:2px solid transparent;}
+  .steps li .dot{
+    width:22px;height:22px;border-radius:50%;
+    background:rgba(255,255,255,0.12);
+    border:1.5px solid rgba(255,255,255,0.4);
+    color:#fff;font-size:0.75rem;font-weight:700;
+    display:flex;align-items:center;justify-content:center;
+    position:absolute;left:-12px;top:10px;
+    transition:background .2s, border-color .2s;
+  }
+  .steps li.active .dot{background:var(--clay-600);border-color:var(--clay-600);}
+  .steps li.done .dot{background:var(--ok);border-color:var(--ok);}
+  .steps li .txt-title{font-weight:600;font-size:0.95rem;}
+  .steps li .txt-sub{color:#B9D2CF;font-size:0.82rem;margin-top:2px;}
+
+  .summary-box{
+    margin-top:28px;
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.15);
+    border-radius:10px;
+    padding:14px 16px;
+    font-size:0.85rem;
+    color:#DCEBE9;
+    display:none;
+  }
+  .summary-box.show{display:block;}
+  .summary-box b{color:#fff;}
+  .summary-row{display:flex;justify-content:space-between;gap:8px;padding:3px 0;}
+
+  /* ---- Panel del formulario ---- */
+  .panel{padding:36px 32px 32px;}
+  .panel h2{
+    font-family:'Fraunces', serif;
+    font-weight:500;
+    font-size:1.35rem;
+    margin:0 0 4px;
+  }
+  .panel .sub{color:var(--ink-500);font-size:0.9rem;margin:0 0 24px;}
+
+  form{display:flex;flex-direction:column;gap:18px;}
+  .step-panel{display:none;flex-direction:column;gap:18px;}
+  .step-panel.active{display:flex;}
+
+  .field{display:flex;flex-direction:column;gap:6px;}
+  .field label{
+    font-size:0.88rem;font-weight:600;color:var(--ink-900);
+    display:flex;align-items:center;gap:6px;
+  }
+  .field label .opt{font-weight:400;color:var(--ink-500);font-size:0.78rem;}
+  .help-icon{
+    width:16px;height:16px;border-radius:50%;
+    background:var(--line);color:var(--ink-500);
+    font-size:0.68rem;font-weight:700;
+    display:inline-flex;align-items:center;justify-content:center;
+    cursor:help;flex-shrink:0;
+  }
+  .field .hint{font-size:0.78rem;color:var(--ink-500);}
+  .row2{display:grid;grid-template-columns:1fr;gap:18px;}
+  @media(min-width:520px){ .row2{grid-template-columns:1fr 1fr;} }
+
+  input[type=text], input[type=email], input[type=tel], input[type=date], input[type=time], select, textarea{
+    font:inherit;
+    padding:11px 12px;
+    border:1.5px solid var(--line);
+    border-radius:8px;
+    background:#fff;
+    color:var(--ink-900);
+    width:100%;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  input:focus, select:focus, textarea:focus{
+    outline:none;
+    border-color:var(--teal-500);
+    box-shadow:var(--focus);
+  }
+  textarea{resize:vertical;min-height:80px;}
+
+  .field.invalid input, .field.invalid select, .field.invalid textarea{
+    border-color:var(--err);
+    background:#FCF3F2;
+  }
+  .error-msg{
+    display:none;
+    font-size:0.8rem;
+    color:var(--err);
+    gap:6px;
+    align-items:flex-start;
+  }
+  .field.invalid .error-msg{display:flex;}
+
+  .char-count{font-size:0.75rem;color:var(--ink-500);text-align:right;}
+
+  .radio-group{display:flex;flex-direction:column;gap:10px;}
+  .radio-option{
+    display:flex;align-items:center;gap:10px;
+    border:1.5px solid var(--line);
+    border-radius:8px;
+    padding:11px 12px;
+    cursor:pointer;
+    transition:border-color .15s, background .15s;
+  }
+  .radio-option:has(input:checked){
+    border-color:var(--teal-500);
+    background:#EEF6F5;
+  }
+  .radio-option input{width:16px;height:16px;accent-color:var(--teal-700);flex-shrink:0;}
+  .radio-option .opt-text{font-size:0.92rem;}
+  .radio-option .opt-text small{display:block;color:var(--ink-500);font-size:0.78rem;}
+
+  .actions{
+    display:flex;justify-content:space-between;align-items:center;
+    margin-top:8px;padding-top:18px;border-top:1px solid var(--line);
+  }
+  button{font:inherit;cursor:pointer;border-radius:8px;border:1.5px solid transparent;padding:11px 20px;font-weight:600;}
+  .btn-primary{background:var(--teal-700);color:#fff;}
+  .btn-primary:hover{background:var(--teal-900);}
+  .btn-primary:disabled{background:#A9BEBC;cursor:not-allowed;}
+  .btn-secondary{background:transparent;color:var(--teal-700);border-color:var(--line);}
+  .btn-secondary:hover{background:#F0EEE6;}
+  button:focus-visible, a:focus-visible, input:focus-visible{outline:3px solid var(--teal-500);outline-offset:2px;}
+
+  .status-banner{
+    display:none;
+    align-items:flex-start;gap:10px;
+    padding:12px 14px;border-radius:8px;font-size:0.88rem;
+    margin-bottom:4px;
+  }
+  .status-banner.show{display:flex;}
+  .status-banner.saving{background:#EEF6F5;color:var(--teal-900);border:1px solid #BFDAD8;}
+  .status-banner.success{background:#EAF6EF;color:var(--ok);border:1px solid #BFE3CE;}
+  .status-banner.error{background:#FCEEEC;color:var(--err);border:1px solid #F3C9C3;}
+  .spinner{
+    width:14px;height:14px;border-radius:50%;
+    border:2px solid #BFDAD8;border-top-color:var(--teal-700);
+    animation:spin .7s linear infinite;flex-shrink:0;margin-top:2px;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .review-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;}
+  .review-list li{
+    display:flex;justify-content:space-between;gap:12px;
+    padding:10px 12px;background:var(--sand-100);border-radius:8px;font-size:0.9rem;
+  }
+  .review-list li span:first-child{color:var(--ink-500);}
+  .review-list li span:last-child{font-weight:600;text-align:right;}
+  .edit-link{background:none;border:none;color:var(--teal-700);font-size:0.8rem;font-weight:600;text-decoration:underline;cursor:pointer;padding:0;}
+
+  .checkbox-row{display:flex;align-items:flex-start;gap:10px;font-size:0.85rem;color:var(--ink-500);}
+  .checkbox-row input{margin-top:3px;accent-color:var(--teal-700);}
+
+  .help-footer{
+    margin-top:22px;padding-top:16px;border-top:1px solid var(--line);
+    font-size:0.82rem;color:var(--ink-500);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;
+  }
+  .help-footer a{color:var(--teal-700);font-weight:600;text-decoration:none;}
+  .help-footer a:hover{text-decoration:underline;}
+
+  .visually-hidden{
+    position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+    overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .spinner{animation:none;}
+    *{transition:none !important;}
+  }
+</style>
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- Panel izquierdo: contexto y progreso permanente (Heurística 1: Visibilidad del estado del sistema) -->
+  <aside class="context">
+    <h1>Reserva tu cita</h1>
+    <p class="lead">Completa tus datos en tres pasos breves. Puedes ir hacia atrás en cualquier momento sin perder lo que ya escribiste.</p>
+
+    <ol class="steps" id="stepsNav" aria-label="Progreso del formulario">
+      <li class="active" data-step="1">
+        <span class="dot">1</span>
+        <div>
+          <div class="txt-title">Tus datos</div>
+          <div class="txt-sub">Nombre y contacto</div>
+        </div>
+      </li>
+      <li data-step="2">
+        <span class="dot">2</span>
+        <div>
+          <div class="txt-title">Detalles de la cita</div>
+          <div class="txt-sub">Servicio, fecha y hora</div>
+        </div>
+      </li>
+      <li data-step="3">
+        <span class="dot">3</span>
+        <div>
+          <div class="txt-title">Confirmar</div>
+          <div class="txt-sub">Revisa antes de enviar</div>
+        </div>
+      </li>
+    </ol>
+
+    <!-- Resumen que se rellena a medida que el usuario avanza (Heurística 6: Reconocer en vez de recordar) -->
+    <div class="summary-box" id="summaryBox" aria-live="polite">
+      <div class="summary-row"><span>Nombre</span><b id="sumNombre">—</b></div>
+      <div class="summary-row"><span>Servicio</span><b id="sumServicio">—</b></div>
+      <div class="summary-row"><span>Fecha</span><b id="sumFecha">—</b></div>
+    </div>
+  </aside>
+
+  <!-- Panel derecho: formulario -->
+  <main class="panel">
+    <form id="citaForm" novalidate>
+
+      <!-- Banner de estado del sistema: guardado, éxito, error (Heurística 1 y 9) -->
+      <div class="status-banner" id="statusBanner" role="status"></div>
+
+      <!-- ===================== PASO 1: DATOS PERSONALES ===================== -->
+      <div class="step-panel active" data-step-panel="1">
+        <h2>Tus datos de contacto</h2>
+        <p class="sub">Los usamos únicamente para confirmar y recordarte tu cita.</p>
+
+        <div class="row2">
+          <div class="field" id="f-nombre">
+            <label for="nombre">Nombre completo</label>
+            <input type="text" id="nombre" name="nombre" autocomplete="name" placeholder="Ej. María López García" required>
+            <span class="error-msg">⚠ Escribe tu nombre y apellido para poder identificarte.</span>
+          </div>
+
+          <div class="field" id="f-telefono">
+            <label for="telefono">Teléfono
+              <span class="help-icon" title="Usaremos este número solo para recordatorios de tu cita por WhatsApp o llamada.">?</span>
+            </label>
+            <input type="tel" id="telefono" name="telefono" autocomplete="tel" placeholder="Ej. 834 123 4567" inputmode="tel" required>
+            <span class="hint">10 dígitos, sin espacios ni guiones.</span>
+            <span class="error-msg">⚠ El teléfono debe tener 10 dígitos, por ejemplo 8341234567.</span>
+          </div>
+        </div>
+
+        <div class="field" id="f-correo">
+          <label for="correo">Correo electrónico</label>
+          <input type="email" id="correo" name="correo" autocomplete="email" placeholder="Ej. maria@correo.com" required>
+          <span class="error-msg">⚠ Escribe un correo válido, por ejemplo nombre@correo.com.</span>
+        </div>
+
+        <div class="field" id="f-nacimiento">
+          <label for="nacimiento">Fecha de nacimiento <span class="opt">(opcional)</span></label>
+          <input type="date" id="nacimiento" name="nacimiento">
+          <span class="hint">Nos ayuda a prepararte una atención más personalizada.</span>
+        </div>
+
+        <div class="actions">
+          <span></span>
+          <button type="button" class="btn-primary" data-next>Continuar</button>
+        </div>
+      </div>
+
+      <!-- ===================== PASO 2: DATOS DE LA CITA ===================== -->
+      <div class="step-panel" data-step-panel="2">
+        <h2>Detalles de la cita</h2>
+        <p class="sub">Elige el servicio y el horario que mejor te acomode.</p>
+
+        <div class="field" id="f-servicio">
+          <label for="servicio">Servicio solicitado</label>
+          <select id="servicio" name="servicio" required>
+            <option value="" disabled selected>Selecciona un servicio</option>
+            <option value="Consulta general">Consulta general</option>
+            <option value="Valoración inicial">Valoración inicial</option>
+            <option value="Seguimiento">Seguimiento</option>
+            <option value="Otro">Otro (indícalo en notas)</option>
+          </select>
+          <span class="error-msg">⚠ Selecciona el servicio que necesitas.</span>
+        </div>
+
+        <div class="row2">
+          <div class="field" id="f-fecha">
+            <label for="fecha">Fecha</label>
+            <input type="date" id="fecha" name="fecha" required>
+            <span class="error-msg">⚠ Elige una fecha a partir de hoy.</span>
+          </div>
+          <div class="field" id="f-hora">
+            <label for="hora">Hora</label>
+            <select id="hora" name="hora" required>
+              <option value="" disabled selected>Selecciona una hora</option>
+            </select>
+            <span class="hint">Horario de atención: 8:00–18:00.</span>
+            <span class="error-msg">⚠ Elige una hora dentro de nuestro horario (8:00–18:00).</span>
+          </div>
+        </div>
+
+        <div class="field" id="f-notas">
+          <label for="notas">Notas para el especialista <span class="opt">(opcional)</span></label>
+          <textarea id="notas" name="notas" maxlength="240" placeholder="Ej. Es mi primera visita, tengo dudas sobre..."></textarea>
+          <div class="char-count"><span id="notasCount">0</span>/240</div>
+        </div>
+
+        <div class="actions">
+          <button type="button" class="btn-secondary" data-prev>Atrás</button>
+          <button type="button" class="btn-primary" data-next>Continuar</button>
+        </div>
+      </div>
+
+      <!-- ===================== PASO 3: CONFIRMACIÓN ===================== -->
+      <div class="step-panel" data-step-panel="3">
+        <h2>Revisa antes de enviar</h2>
+        <p class="sub">Verifica que todo esté correcto. Puedes editar cualquier sección.</p>
+
+        <ul class="review-list" id="reviewList" aria-live="polite">
+          <!-- Se llena por JavaScript -->
+        </ul>
+
+        <label class="checkbox-row">
+          <input type="checkbox" id="aceptaAviso" required>
+          <span>He leído y acepto el aviso de privacidad y el uso de mis datos para gestionar esta cita.</span>
+        </label>
+        <span class="error-msg" id="errAviso" style="display:none;">⚠ Debes aceptar el aviso de privacidad para continuar.</span>
+
+        <div class="actions">
+          <button type="button" class="btn-secondary" data-prev>Atrás</button>
+          <button type="submit" class="btn-primary" id="submitBtn">Confirmar cita</button>
+        </div>
+      </div>
+
+    </form>
+
+    <div class="help-footer">
+      <span>¿Tienes dudas? <a href="#" onclick="return false;">Ver preguntas frecuentes</a></span>
+      <span>Soporte: <a href="tel:+528341234567">834 123 4567</a></span>
+    </div>
+  </main>
+</div>
+
+<script>
+(function(){
+  const form = document.getElementById('citaForm');
+  const steps = [1,2,3];
+  let current = 1;
+
+  const panels = {};
+  steps.forEach(s => panels[s] = document.querySelector(`[data-step-panel="${s}"]`));
+  const navItems = {};
+  document.querySelectorAll('#stepsNav li').forEach(li => navItems[li.dataset.step] = li);
+
+  const fields = {
+    nombre: document.getElementById('nombre'),
+    telefono: document.getElementById('telefono'),
+    correo: document.getElementById('correo'),
+    servicio: document.getElementById('servicio'),
+    fecha: document.getElementById('fecha'),
+    hora: document.getElementById('hora'),
+    notas: document.getElementById('notas'),
+  };
+
+  // Fecha mínima = hoy (Heurística 5: prevención de errores)
+  const todayISO = new Date().toISOString().split('T')[0];
+  fields.fecha.min = todayISO;
+
+  // Genera las horas disponibles cada 30 min de 8:00 a 18:00 (Heurística 5: prevención de errores,
+  // evita que el usuario escriba una hora fuera de horario o con formato inválido)
+  (function poblarHoras(){
+    const select = fields.hora;
+    for(let mins = 8*60; mins <= 18*60; mins += 30){
+      const h24 = Math.floor(mins/60);
+      const m = mins % 60;
+      const value = String(h24).padStart(2,'0') + ':' + String(m).padStart(2,'0');
+      const h12 = ((h24 + 11) % 12) + 1;
+      const suffix = h24 < 12 ? 'a.m.' : 'p.m.';
+      const label = `${h12}:${String(m).padStart(2,'0')} ${suffix}`;
+      const opt = document.createElement('option');
+      opt.value = value;
+      opt.textContent = label;
+      select.appendChild(opt);
+    }
+  })();
+
+  // Contador de caracteres en notas (Heurística 1: visibilidad del estado)
+  fields.notas.addEventListener('input', () => {
+    document.getElementById('notasCount').textContent = fields.notas.value.length;
+  });
+
+  function setInvalid(fieldWrapperId, invalid){
+    const el = document.getElementById(fieldWrapperId);
+    if(el) el.classList.toggle('invalid', invalid);
+  }
+
+  // Validaciones por paso (Heurística 5 y 9: prevenir errores y ayudar a recuperarse de ellos)
+  function validateStep(step){
+    let ok = true;
+
+    if(step === 1){
+      const nombreOk = fields.nombre.value.trim().length >= 3 && fields.nombre.value.trim().includes(' ');
+      setInvalid('f-nombre', !nombreOk); if(!nombreOk) ok = false;
+
+      const telOk = /^\d{10}$/.test(fields.telefono.value.replace(/\D/g,''));
+      setInvalid('f-telefono', !telOk); if(!telOk) ok = false;
+
+      const correoOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.correo.value.trim());
+      setInvalid('f-correo', !correoOk); if(!correoOk) ok = false;
+    }
+
+    if(step === 2){
+      const servicioOk = fields.servicio.value !== '';
+      setInvalid('f-servicio', !servicioOk); if(!servicioOk) ok = false;
+
+      const fechaOk = fields.fecha.value !== '' && fields.fecha.value >= todayISO;
+      setInvalid('f-fecha', !fechaOk); if(!fechaOk) ok = false;
+
+      const horaOk = fields.hora.value !== '';
+      setInvalid('f-hora', !horaOk); if(!horaOk) ok = false;
+    }
+
+    if(step === 3){
+      const avisoOk = document.getElementById('aceptaAviso').checked;
+      document.getElementById('errAviso').style.display = avisoOk ? 'none' : 'flex';
+      if(!avisoOk) ok = false;
+    }
+
+    return ok;
+  }
+
+  function updateSummary(){
+    document.getElementById('sumNombre').textContent = fields.nombre.value.trim() || '—';
+    document.getElementById('sumServicio').textContent = fields.servicio.value || '—';
+    const f = fields.fecha.value, h = fields.hora.value;
+    document.getElementById('sumFecha').textContent = (f ? f : '—') + (h ? ' · ' + h : '');
+    document.getElementById('summaryBox').classList.toggle('show', current > 1);
+  }
+
+  function buildReview(){
+    const items = [
+      ['Nombre', fields.nombre.value.trim(), 1],
+      ['Teléfono', fields.telefono.value.trim(), 1],
+      ['Correo', fields.correo.value.trim(), 1],
+      ['Servicio', fields.servicio.value, 2],
+      ['Fecha y hora', `${fields.fecha.value} · ${fields.hora.value}`, 2],
+    ];
+    const list = document.getElementById('reviewList');
+    list.innerHTML = '';
+    items.forEach(([label, value, stepToEdit]) => {
+      const li = document.createElement('li');
+      li.innerHTML = `<span>${label}</span><span>${value || '—'} <button type="button" class="edit-link" data-edit="${stepToEdit}">Editar</button></span>`;
+      list.appendChild(li);
+    });
+    list.querySelectorAll('[data-edit]').forEach(btn => {
+      btn.addEventListener('click', () => goToStep(parseInt(btn.dataset.edit, 10)));
+    });
+  }
+
+  // Consistencia: misma lógica de navegación en cualquier punto (Heurística 4)
+  function goToStep(step){
+    panels[current].classList.remove('active');
+    navItems[current].classList.remove('active');
+    if(step > current) navItems[current].classList.add('done');
+
+    current = step;
+    panels[current].classList.add('active');
+    navItems[current].classList.add('active');
+    navItems[current].classList.remove('done');
+
+    updateSummary();
+    if(step === 3) buildReview();
+
+    // Control del usuario: el foco vuelve al inicio del paso (Heurística 3)
+    panels[current].querySelector('h2').setAttribute('tabindex','-1');
+    panels[current].querySelector('h2').focus();
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+
+  document.querySelectorAll('[data-next]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if(validateStep(current)){
+        goToStep(current + 1);
+      } else {
+        // Lleva el foco al primer campo con error (Heurística 9)
+        const firstInvalid = document.querySelector('.field.invalid input, .field.invalid select');
+        if(firstInvalid) firstInvalid.focus();
+      }
+    });
+  });
+
+  document.querySelectorAll('[data-prev]').forEach(btn => {
+    btn.addEventListener('click', () => goToStep(current - 1));
+  });
+
+  // Revalidar en vivo mientras el usuario corrige (Heurística 9)
+  Object.values(fields).forEach(f => {
+    f.addEventListener('blur', () => validateStep(current));
+  });
+
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    if(!validateStep(3)) return;
+
+    const banner = document.getElementById('statusBanner');
+    const submitBtn = document.getElementById('submitBtn');
+
+    // Heurística 1: visibilidad del estado del sistema mientras se procesa
+    banner.className = 'status-banner saving show';
+    banner.innerHTML = '<span class="spinner"></span><span>Registrando tu cita, un momento…</span>';
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Enviando…';
+
+    setTimeout(() => {
+      banner.className = 'status-banner success show';
+      banner.innerHTML = '<span>✓</span><span>¡Listo! Tu cita quedó registrada. Te enviamos la confirmación a ' + (fields.correo.value.trim() || 'tu correo') + '.</span>';
+      submitBtn.textContent = 'Cita confirmada';
+    }, 1200);
+  });
+
+  updateSummary();
+})();
+</script>
+
+</body>
+</html>
